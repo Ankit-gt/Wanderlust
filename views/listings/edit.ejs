@@ -4,8 +4,9 @@
   <div class="row">
     <div class="col-8">
       <form
+        novalidate
         action="/listings/<%= listing._id %>?_method=PUT"
-        class="offset-2"
+        class="offset-2 needs-validation"
         method="POST"
       >
         <h3 class="mt-3">Edit Listing</h3>
@@ -20,6 +21,8 @@
             placeholder="Enter title"
             required
           />
+          <div class="valid-feedback">Looks good!</div>
+          <div class="invalid-feedback">Enter title!</div>
         </div>
 
         <div class="mb-3">
@@ -32,7 +35,24 @@
           >
  <%= listing.description %></textarea
           >
+          <div class="valid-feedback">Looks good!</div>
+          <div class="invalid-feedback">Enter description!</div>
         </div>
+
+        <div class="mb-3">
+          <label for="image" class="form-label">Image link</label>
+          <input
+            value="<%= listing.image.url %>"
+            id="image"
+            class="form-control"
+            name="listing[image][url]"
+            type="text"
+            required
+          />
+          <div class="valid-feedback">Looks good!</div>
+          <div class="invalid-feedback">Enter img url!</div>
+        </div>
+
         <div class="row">
           <div class="mb-3 col-md-4">
             <label for="price" class="form-label">Price</label>
@@ -45,6 +65,8 @@
               placeholder="Enter price"
               required
             />
+            <div class="valid-feedback">Looks good!</div>
+            <div class="invalid-feedback">Enter price!</div>
           </div>
 
           <div class="mb-3 col-md-8">
@@ -58,6 +80,8 @@
               name="listing[country]"
               required
             />
+            <div class="valid-feedback">Looks good!</div>
+            <div class="invalid-feedback">Enter country!</div>
           </div>
         </div>
 
@@ -72,10 +96,13 @@
             name="listing[location]"
             required
           />
+          <div class="valid-feedback">Looks good!</div>
+          <div class="invalid-feedback">Enter location!</div>
         </div>
 
         <button class="btn cst-btn mb-5">Edit</button>
       </form>
     </div>
   </div>
+  <script src="/js/script.js"></script>
 </body>
