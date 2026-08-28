@@ -8,6 +8,8 @@ const mongoose = require("mongoose");
 const ejsMate = require("ejs-mate");
 const wrapAsync = require("./utils/wrapAync.js");
 const ExpressError = require("./utils/ExpressError.js");
+const Joi = require("joi");
+const { listingSchema } = require("./schema.js");
 
 main()
   .then(() => {
@@ -31,11 +33,24 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
+const validateListing = (req, res, next) => {
+  let { error } = listingSchema.validate(req.body);
+
+  if (error) {
+    throw new ExpressError(400, result.error);
+  } else {
+    next();
+  }
+};
+
 // Index route
-app.get("/listings", wrapAsync(async (req, res) => {
-  let allListings = await Listing.find({});
-  res.render("listings/index.ejs", { allListings });
-}));
+app.get(
+  "/listings",
+  wrapAsync(async (req, res) => {
+    let allListings = await Listing.find({});
+    res.render("listings/index.ejs", { allListings });
+  }),
+);
 
 // New route
 app.get("/listings/new", (req, res) => {
@@ -44,55 +59,69 @@ app.get("/listings/new", (req, res) => {
 
 //create route
 app.post(
-  "/listings",
+  "/listings", validateListing,
   wrapAsync(async (req, res) => {
     const listingData = { ...req.body.listing };
     if (!listingData.image?.url?.trim()) {
       delete listingData.image;
     }
+
     const newListing = new Listing(listingData);
     await newListing.save();
     res.redirect("/listings");
-    console.log(newListing);
   }),
 );
 
 // Show route
-app.get("/listings/:id", wrapAsync(async (req, res) => {
-  let { id } = req.params;
-  let listing = await Listing.findById(id);
-  res.render("listings/show.ejs", { listing });
-}));
+app.get(
+  "/listings/:id",
+  wrapAsync(async (req, res) => {
+    let { id } = req.params;
+    let listing = await Listing.findById(id);
+    res.render("listings/show.ejs", { listing });
+  }),
+);
 
 //edit route
-app.get("/listings/:id/edit",wrapAsync( async (req, res) => {
-  let { id } = req.params;
-  const listing = await Listing.findById(id);
-  res.render("listings/edit.ejs", { listing });
-  // console.log(listing);
-}));
+app.get(
+  "/listings/:id/edit",
+  wrapAsync(async (req, res) => {
+    let { id } = req.params;
+    const listing = await Listing.findById(id);
+    res.render("listings/edit.ejs", { listing });
+    // console.log(listing);
+  }),
+);
 //delete route
-app.delete("/listings/:id",wrapAsync( async (req, res) => {
-  let { id } = req.params;
-  await Listing.findByIdAndDelete(id);
-  res.redirect("/listings");
-}));
+app.delete(
+  "/listings/:id",
+  wrapAsync(async (req, res) => {
+    let { id } = req.params;
+    await Listing.findByIdAndDelete(id);
+    res.redirect("/listings");
+  }),
+);
 
 //update route
-app.put("/listings/:id",wrapAsync( async (req, res) => {
-  let { id } = req.params;
-  const listing = await Listing.findByIdAndUpdate(id, { ...req.body.listing });
-  res.redirect(`/listings/${id}`);
-}));
-
+app.put(
+  "/listings/:id", validateListing,
+  wrapAsync(async (req, res) => {
+    let { id } = req.params;
+    const listing = await Listing.findByIdAndUpdate(id, {
+      ...req.body.listing,
+    });
+    res.redirect(`/listings/${id}`);
+  }),
+);
+ 
 app.all("/{*splat}", (req, res, next) => {
-    next(new ExpressError(404, "No such page exist"));
+  next(new ExpressError(404, "No such page exist"));
 });
 
 app.use((err, req, res, next) => {
-  let { statusCode=500, message="something went wroong" } = err;
+  let { statusCode = 500, message = "something went wroong" } = err;
   // res.status(statusCode).send(message);
- res.status(statusCode).render("listings/error.ejs",{message})
+  res.status(statusCode).render("listings/error.ejs", { message });
 });
 
 app.listen(port, () => {
