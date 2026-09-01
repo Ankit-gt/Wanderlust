@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const port = 3000;
 const Listing = require("./models/listing");
+const Review = require("./models/review.js");
 const path = require("path");
 const methodOverride = require("method-override");
 const mongoose = require("mongoose");
@@ -10,6 +11,8 @@ const wrapAsync = require("./utils/wrapAync.js");
 const ExpressError = require("./utils/ExpressError.js");
 const Joi = require("joi");
 const { listingSchema } = require("./schema.js");
+const { reviewSchema } = require("./schema.js");
+const review = require("./models/review.js");
 
 main()
   .then(() => {
@@ -37,7 +40,16 @@ const validateListing = (req, res, next) => {
   let { error } = listingSchema.validate(req.body);
 
   if (error) {
-    throw new ExpressError(400, result.error);
+    throw new ExpressError(400, error);
+  } else {
+    next();
+  }
+};
+const validateReview = (req, res, next) => {
+  let { error } = reviewSchema.validate(req.body);
+
+  if (error) {
+    throw new ExpressError(400, error);
   } else {
     next();
   }
@@ -59,10 +71,11 @@ app.get("/listings/new", (req, res) => {
 
 //create route
 app.post(
-  "/listings", validateListing,
+  "/listings",
+  validateListing,
   wrapAsync(async (req, res) => {
     const listingData = { ...req.body.listing };
-    if (!listingData.image?.url?.trim()) {
+    if (!listingData.image?.trim()) {
       delete listingData.image;
     }
 
@@ -77,7 +90,7 @@ app.get(
   "/listings/:id",
   wrapAsync(async (req, res) => {
     let { id } = req.params;
-    let listing = await Listing.findById(id);
+    let listing = await Listing.findById(id).populate("reviews");
     res.render("listings/show.ejs", { listing });
   }),
 );
@@ -104,7 +117,8 @@ app.delete(
 
 //update route
 app.put(
-  "/listings/:id", validateListing,
+  "/listings/:id",
+  validateListing,
   wrapAsync(async (req, res) => {
     let { id } = req.params;
     const listing = await Listing.findByIdAndUpdate(id, {
@@ -113,7 +127,36 @@ app.put(
     res.redirect(`/listings/${id}`);
   }),
 );
- 
+
+//reviews
+app.post(
+  "/listings/:id/reviews",
+  validateReview,
+  wrapAsync(async (req, res) => {
+    let { id } = req.params;
+    let listing = await Listing.findById(req.params.id);
+    let newReview = new Review(req.body.review);
+
+    listing.reviews.push(newReview);
+    await newReview.save();
+    await listing.save();
+    console.log("revirew saved");
+    res.redirect(`/listings/${id}`);
+  }),
+);
+
+//delete review
+app.delete(
+  "/listings/:id/reviews/:reviewId",
+  wrapAsync(async (req, res) => {
+    let { id, reviewId } = req.params;
+
+    await Listing.findByIdAndUpdate(id,{$pull:{reviews:reviewId}});
+    await Review.findByIdAndDelete(reviewId);
+     res.redirect(`/listings/${id}`);
+  }),
+);
+
 app.all("/{*splat}", (req, res, next) => {
   next(new ExpressError(404, "No such page exist"));
 });
@@ -121,7 +164,9 @@ app.all("/{*splat}", (req, res, next) => {
 app.use((err, req, res, next) => {
   let { statusCode = 500, message = "something went wroong" } = err;
   // res.status(statusCode).send(message);
-  res.status(statusCode).render("listings/error.ejs", { message });
+  res
+    .status(statusCode)
+    .render("listings/error.ejs", { message, stack: err.stack });
 });
 
 app.listen(port, () => {

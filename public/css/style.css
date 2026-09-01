@@ -84,3 +84,8 @@ body {
   opacity: 0.25;
   background-color: #fff;
 }
+
+
+.review-div{
+  border: #222222 2px !important;
+}
