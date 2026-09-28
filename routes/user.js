@@ -11,7 +11,7 @@ router.get("/signup", async (req, res) => {
 
 router.post(
   "/signup",
-  wrapAsync(async (req, res) => {
+  wrapAsync(async (req, res, next) => {
     try {
       let { username, password, email } = req.body;
       let newUser = new User({
@@ -26,7 +26,7 @@ router.post(
           return next(err);
         }
         req.flash("success", `Welcome ${username} to WanderLust!!!`);
-        res.redirect("/listings"); 
+        res.redirect("/listings");
       });
     } catch (e) {
       req.flash("error", e.message);
@@ -52,15 +52,16 @@ router.post(
   async (req, res) => {
     let { username } = req.body;
     req.flash("success", `Welcome  ${username} !!!`);
-    let redirectUrl=res.locals.redirectUrl || "/listings"
+    const redirectUrl = res.locals.redirectUrl || "/listings";
+    delete req.session.redirectUrl;
     res.redirect(redirectUrl);
   },
 );
 
-router.get("/logout", (req, res) => {
+router.get("/logout", (req, res, next) => {
   req.logout((err) => {
     if (err) {
-      next(err);
+      return next(err);
     }
     req.flash("success", " You are logged out");
     res.redirect("/listings");
