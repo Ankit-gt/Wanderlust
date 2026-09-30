@@ -2,70 +2,28 @@ const express = require("express");
 const router = express.Router({ mergeParams: true });
 const passport = require("passport");
 const wrapAsync = require("../utils/wrapAync.js");
-const User = require("../models/user.js");
+const userController = require("../controller/users.js");
 const { saveRedirectedUrl } = require("../middleware.js");
 
-router.get("/signup", async (req, res) => {
-  res.render("users/signup.ejs");
-});
+router
+  .route("/signup")
+  .get(userController.renderSignupForm)
+  .post(wrapAsync(userController.signup));
 
-router.post(
-  "/signup",
-  wrapAsync(async (req, res, next) => {
-    try {
-      let { username, password, email } = req.body;
-      let newUser = new User({
-        username: username,
-        email: email,
-      });
+router
+  .route("/login")
+  .get(saveRedirectedUrl, userController.renderLoginForm)
+  .post(
+    saveRedirectedUrl,
+    passport.authenticate("local", {
+      failureRedirect: "/login",
+      failureFlash: true,
+    }),
+    userController.login,
+  );
 
-      let registerdUser = await User.register(newUser, password);
 
-      req.login(registerdUser, (err) => {
-        if (err) {
-          return next(err);
-        }
-        req.flash("success", `Welcome ${username} to WanderLust!!!`);
-        res.redirect("/listings");
-      });
-    } catch (e) {
-      req.flash("error", e.message);
-      res.redirect("/signup");
-    }
-  }),
-);
 
-router.get("/login", 
-  saveRedirectedUrl,
-  (req, res) => {
-    res.render("users/login.ejs");
-  }
-);
-
-router.post(
-  "/login",
-  saveRedirectedUrl,
-  passport.authenticate("local", {
-    failureRedirect: "/login",
-    failureFlash: true,
-  }),
-  async (req, res) => {
-    let { username } = req.body;
-    req.flash("success", `Welcome  ${username} !!!`);
-    const redirectUrl = res.locals.redirectUrl || "/listings";
-    delete req.session.redirectUrl;
-    res.redirect(redirectUrl);
-  },
-);
-
-router.get("/logout", (req, res, next) => {
-  req.logout((err) => {
-    if (err) {
-      return next(err);
-    }
-    req.flash("success", " You are logged out");
-    res.redirect("/listings");
-  });
-});
+router.get("/logout", userController.logout);
 
 module.exports = router;
