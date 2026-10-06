@@ -4,7 +4,8 @@ const wrapAsync = require("../utils/wrapAync.js");
 const { isLoggedIn, isOwner, validateListing } = require("../middleware.js");
 const ListingController = require("../controller/listing.js");
 const multer=require("multer");
-const upload = multer({ dest: 'uploads/' })
+const {storage}=require("../cloudConfig.js")
+const upload = multer({ storage })
 
 //view route
 //create route
@@ -13,6 +14,7 @@ router
   .get(wrapAsync(ListingController.index))
   .post(
     isLoggedIn,
+    upload.single("listing[image]"),
     validateListing,
     wrapAsync(ListingController.createListing)
   );
@@ -30,10 +32,11 @@ router.get("/:id/edit", isLoggedIn, isOwner, wrapAsync(ListingController.editLis
 router.route("/:id")
 .get(wrapAsync(ListingController.showListing))
 .delete(isLoggedIn, isOwner, wrapAsync(ListingController.deleteListing))
-.put(
-   validateListing,
+  .put(
   isLoggedIn,
   isOwner,
+  upload.single("listing[image]"),
+  validateListing,
   wrapAsync(ListingController.updateListing),
 );
 module.exports = router;

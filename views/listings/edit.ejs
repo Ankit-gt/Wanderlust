@@ -4,6 +4,7 @@
   <div class="row">
     <div class="col-8">
       <form
+        enctype="multipart/form-data"
         novalidate
         action="/listings/<%= listing._id %>?_method=PUT"
         class="offset-2 needs-validation"
@@ -33,24 +34,26 @@
             name="listing[description]"
             required
           >
- <%= listing.description %></textarea
-          >
+ <%= listing.description %> </textarea>
           <div class="valid-feedback">Looks good!</div>
           <div class="invalid-feedback">Enter description!</div>
         </div>
 
         <div class="mb-3">
-          <label for="image" class="form-label">Image link</label>
+          <label for="image" class="form-label">Replace image</label>
+          <img
+            src="<%= listing.imageUrl %>"
+            alt="Current listing image"
+            class="rounded mb-2 d-block"
+            style="height: 160px; object-fit: cover"
+          />
           <input
-            value="<%= listing.image %>"
             id="image"
             class="form-control"
             name="listing[image]"
-            type="text"
-            required
+            type="file"
           />
           <div class="valid-feedback">Looks good!</div>
-          <div class="invalid-feedback">Enter img url!</div>
         </div>
 
         <div class="row">

@@ -1,6 +1,10 @@
+if (process.env.NODE_ENV != "production") {
+  require("dotenv").config()
+}
+
 const express = require("express");
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 const path = require("path");
 const methodOverride = require("method-override");
 const mongoose = require("mongoose");
@@ -17,10 +21,11 @@ const listingsRouter = require("./routes/listing.js");
 const reviewsRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
 
-const MONGO_URL = "mongodb://127.0.0.1:27017/wanderlust";
+
+const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
 
 const sessionOptions = {
-  secret: "mysupersecretcode",
+  secret: process.env.SESSION_SECRET || "development-only-change-me",
   resave: false,
   saveUninitialized: true,
   cookie: {
@@ -37,7 +42,7 @@ main()
   .catch((err) => console.log(err));
 
 async function main() {
-  await mongoose.connect("mongodb://127.0.0.1:27017/wanderlust");
+  await mongoose.connect(MONGO_URL);
 }
 
 app.engine("ejs", ejsMate);

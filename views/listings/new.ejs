@@ -3,7 +3,7 @@
 <div class="row offset-2">
   <div class="col-8">
     <form
-      enctype=" multipart/form-data"
+      enctype="multipart/form-data"
       action="/listings"
       method="POST"
       class="needs-validation"
@@ -38,12 +38,14 @@
       </div>
 
       <div class="mb-3">
-        <label for="title" class="form-label">Image link</label>
+        <label for="image" class="form-label"> Upload Image</label>
         <input
-          id="title"
+          id="image"
           class="form-control"
           name="listing[image]"
           type="file"
+          accept="image/png,image/jpeg,image/jpg"
+          required
         />
       </div>
       <div class="row">

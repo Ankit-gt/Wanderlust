@@ -89,3 +89,8 @@ body {
 .review-div{
   border: #222222 2px !important;
 }
+
+#map {
+  height: 1000px;    
+  width: 1000px;
+}
