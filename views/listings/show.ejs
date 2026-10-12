@@ -1,5 +1,4 @@
 <% layout("/layout/boilerplate") %>
-
 <body>
   <div class="card offset-2 border-0 mt-3" style="max-width: 600px">
     <h5 class="card-title">
@@ -123,7 +122,12 @@
       <h3>
         Where you'll be
       </h3>
-      <div id="map" class="mb-3" data-map-token="<%= mapToken || '' %>"></div>
+      <div
+        id="map"
+        class="mb-3"
+        data-map-token="<%= mapToken || '' %>"
+        data-coordinates="<%= JSON.stringify(listing.geometry?.coordinates || []) %>"
+      ></div>
     </div> 
   </div>
 

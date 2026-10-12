@@ -1,12 +1,21 @@
-const geocoding = require("@mapbox/mapbox-sdk/services/geocoding");
 const Listing = require("../models/listing.js");
-const mbxGeocoding=require("@mapbox/mapbox-sdk/services/geocoding")
-const mapToken=process.env.MAP_TOKEN;
-const geocodingClient = mbxGeocoding({ accessToken: mapToken});
+const mbxGeocoding = require("@mapbox/mapbox-sdk/services/geocoding");
+const mapToken = process.env.MAP_TOKEN;
+const geocodingClient = mapToken
+  ? mbxGeocoding({ accessToken: mapToken })
+  : null;
 
 module.exports.index = async (req, res) => {
-  let allListings = await Listing.find({});
-  res.render("listings/index.ejs", { allListings });
+  const searchQuery = (req.query.q || "").trim();
+  const filter = searchQuery
+    ? {
+        $or: ["title", "description", "location", "country"].map((field) => ({
+          [field]: { $regex: searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), $options: "i" },
+        })),
+      }
+    : {};
+  const allListings = await Listing.find(filter);
+  res.render("listings/index.ejs", { allListings, searchQuery });
 };
 
 module.exports.newListing = (req, res) => {
@@ -60,6 +69,30 @@ module.exports.showListing = async (req, res) => {
     return res.redirect("/listings");
   }
 
+  // Older listings may not have coordinates. Geocode and save them the first
+  // time their detail page is opened so the map can render on later visits too.
+  if (!listing.geometry?.coordinates?.length && geocodingClient) {
+    try {
+      const response = await geocodingClient
+        .forwardGeocode({
+          query: `${listing.location}, ${listing.country}`,
+          limit: 1,
+        })
+        .send();
+      const geometry = response.body.features[0]?.geometry;
+
+      if (geometry?.type === "Point" && geometry.coordinates?.length === 2) {
+        await Listing.updateOne(
+          { _id: listing._id, "geometry.coordinates": { $exists: false } },
+          { $set: { geometry } },
+        );
+        listing.geometry = geometry;
+      }
+    } catch (error) {
+      console.error(`Could not geocode listing ${listing._id}:`, error.message);
+    }
+  }
+
   res.render("listings/show.ejs", {
     listing,
     mapToken: process.env.MAP_TOKEN,
@@ -85,7 +118,6 @@ module.exports.deleteListing = async (req, res) => {
 
   res.redirect("/listings");
 };
-
 
 module.exports.updateListing =async (req, res) => {
     let { id } = req.params;
