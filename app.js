@@ -10,6 +10,7 @@ const methodOverride = require("method-override");
 const mongoose = require("mongoose");
 const ejsMate = require("ejs-mate");
 const session = require("express-session");
+const { MongoStore } = require("connect-mongo");
 const flash = require("connect-flash");
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
@@ -22,10 +23,31 @@ const reviewsRouter = require("./routes/review.js");
 const userRouter = require("./routes/user.js");
 
 
-const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
+// const MONGO_URL = process.env.MONGO_URL || "mongodb://127.0.0.1:27017/wanderlust";
+
+
+const dbUrl = process.env.ATLASDB_URL;
+
+if (!dbUrl) {
+  throw new Error("ATLASDB_URL is missing from environment variables");
+}
+
+const store = MongoStore.create({
+  mongoUrl: dbUrl,
+  crypto: {
+    secret: process.env.SECRET,
+  },
+  touchAfter: 24 * 3600,
+});
+
+store.on("error", (error) => {
+  console.error("Error in session store:", error);
+});
+
 
 const sessionOptions = {
-  secret: process.env.SESSION_SECRET || "development-only-change-me",
+  store,
+  secret: process.env.SECRET ,
   resave: false,
   saveUninitialized: true,
   cookie: {
@@ -35,15 +57,24 @@ const sessionOptions = {
   },
 };
 
+
+
 main()
   .then(() => {
-    console.log("connected to DB");
+    app.listen(port, () => {
+      console.log(`App listening on port ${port}`);
+    });
   })
-  .catch((err) => console.log(err));
+  .catch((err) => {
+    console.error("MongoDB connection failed:", err);
+    process.exit(1);
+  });
 
 async function main() {
-  await mongoose.connect(MONGO_URL);
+  await mongoose.connect(dbUrl);
+  console.log("Connected to MongoDB");
 }
+
 
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
