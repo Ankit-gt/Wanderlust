@@ -59,21 +59,6 @@ const sessionOptions = {
 
 
 
-main()
-  .then(() => {
-    app.listen(port, () => {
-      console.log(`App listening on port ${port}`);
-    });
-  })
-  .catch((err) => {
-    console.error("MongoDB connection failed:", err);
-    process.exit(1);
-  });
-
-async function main() {
-  await mongoose.connect(dbUrl);
-  console.log("Connected to MongoDB");
-}
 
 
 app.engine("ejs", ejsMate);
@@ -105,6 +90,10 @@ app.use((req, res, next) => {
 //   res.send("Hello World!");
 // });
 
+app.get("/", (req, res) => {
+    res.redirect("/listings");
+});
+
 app.use("/listings", listingsRouter);
 app.use("/listings/:id/reviews", reviewsRouter);
 app.use("/", userRouter);
@@ -120,6 +109,18 @@ app.use((err, req, res, next) => {
     .render("listings/error.ejs", { message, stack: err.stack });
 });
 
-app.listen(port, () => {
-  console.log(`app listening on port ${port}`);
-});
+main()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`App listening on port ${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error("MongoDB connection failed:", err);
+    process.exit(1);
+  });
+
+async function main() {
+  await mongoose.connect(dbUrl);
+  console.log("Connected to MongoDB");
+}
